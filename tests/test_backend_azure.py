@@ -136,7 +136,7 @@ def test_azure_cidr_query(azure_backend: AzureBackend):
                     fieldname|cidr: 192.168.0.0/16
                 condition: sel
         """)
-    ) == ["union *\n| where (ipv4_is_in_range(fieldname, '192.168.0.0/16'))"]
+    ) == ["union *\n| where (ipv4_is_in_range(fieldname, \"192.168.0.0/16\"))"]
 
 
 def test_azure_field_name_with_whitespace(azure_backend: AzureBackend):
@@ -152,7 +152,7 @@ def test_azure_field_name_with_whitespace(azure_backend: AzureBackend):
                     field name: value
                 condition: sel
         """)
-    ) == ['union *\n| where (\'field name\' =~ "value")']
+    ) == ['union *\n| where ([\'field name\'] =~ "value")']
 
 
 # TODO: implement tests for all backend features that don't belong to the base class defaults, e.g. features that were
