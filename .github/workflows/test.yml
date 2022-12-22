@@ -32,12 +32,12 @@ jobs:
         if: ${{ runner.os == 'Linux' }}
         run: poetry run python print-coverage.py >> $GITHUB_ENV
       - name: Create coverage badge
-        if: ${{ github.repository == 'sifex/pySigma-backend-azure' && github.event_name == 'push' && runner.os == 'Linux' }}
+        if: ${{ github.repository == 'sifex/pysigma-backend-azure' && github.event_name == 'push' && runner.os == 'Linux' }}
         uses: schneegans/dynamic-badges-action@v1.1.0
         with:
           auth: ${{ secrets.GIST_SECRET }}
-          gistID: GitHub Gist identifier containing coverage badge JSON expected by shields.io.
-          filename: sifex-pySigma-backend-azure.json
+          gistID: ca69606b24ff09035e696a1d4399ba24
+          filename: pysigma-backend-azure.json
           label: Coverage
           message: ${{ env.COVERAGE }}
           color: ${{ env.COVERAGE_COLOR }}
