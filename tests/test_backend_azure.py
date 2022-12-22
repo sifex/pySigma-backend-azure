@@ -1,5 +1,6 @@
 import pytest
 from sigma.collection import SigmaCollection
+
 from sigma.backends.azure import AzureBackend
 
 
@@ -139,6 +140,28 @@ def test_azure_cidr_query(azure_backend: AzureBackend):
     ) == ["union *\n| where (ipv4_is_in_range(fieldname, \"192.168.0.0/16\"))"]
 
 
+def test_azure_cidr_query_or(azure_backend : AzureBackend):
+    query = azure_backend.convert(
+        SigmaCollection.from_yaml("""
+            title: Test
+            status: test
+            logsource:
+                category: test_category
+                product: test_product
+            detection:
+                sel:
+                    fieldA|cidr:
+                        - 192.168.0.0/16
+                        - 10.0.0.0/8
+                    fieldB: foo
+                    fieldC: bar
+                condition: sel
+        """)
+    ) == [
+        'union *\n| where ((ipv4_is_in_range(fieldA, "192.168.0.0/16") or ipv4_is_in_range(fieldA, "10.0.0.0/8")) and fieldB =~ "foo" and fieldC =~ "bar")'
+    ]
+
+
 def test_azure_field_name_with_whitespace(azure_backend: AzureBackend):
     assert azure_backend.convert(
         SigmaCollection.from_yaml("""
@@ -153,19 +176,3 @@ def test_azure_field_name_with_whitespace(azure_backend: AzureBackend):
                 condition: sel
         """)
     ) == ['union *\n| where ([\'field name\'] =~ "value")']
-
-
-# TODO: implement tests for all backend features that don't belong to the base class defaults, e.g. features that were
-# implemented with custom code, deferred expressions etc.
-
-
-def test_azure_format1_output(azure_backend: AzureBackend):
-    """Test for output format format1."""
-    # TODO: implement a test for the output format
-    pass
-
-
-def test_azure_format2_output(azure_backend: AzureBackend):
-    """Test for output format format2."""
-    # TODO: implement a test for the output format
-    pass

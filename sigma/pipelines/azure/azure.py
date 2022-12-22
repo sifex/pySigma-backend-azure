@@ -1,13 +1,7 @@
-from sigma.pipelines.common import logsource_windows, windows_logsource_mapping
-from sigma.processing.transformations import AddConditionTransformation, FieldMappingTransformation, \
-    DetectionItemFailureTransformation, RuleFailureTransformation, SetStateTransformation
-from sigma.processing.conditions import LogsourceCondition, IncludeFieldCondition, ExcludeFieldCondition, \
-    RuleProcessingItemAppliedCondition
+from sigma.pipelines.common import logsource_windows
 from sigma.processing.pipeline import ProcessingItem, ProcessingPipeline
-
-# TODO: the following code is just an example extend/adapt as required.
-# See https://sigmahq-pysigma.readthedocs.io/en/latest/Processing_Pipelines.html for further documentation.
-
+from sigma.processing.transformations import FieldMappingTransformation, \
+    ReplaceStringTransformation, AddConditionTransformation
 
 azure_windows_service_map = {
     'security': 'SecurityEvent',
@@ -19,23 +13,23 @@ azure_windows_service_map = {
 }
 
 
-def azure_windows() -> ProcessingPipeline:  # Processing pipelines should be defined as functions that return a ProcessingPipeline object.
+def azure_windows_pipeline() -> ProcessingPipeline:  # Processing pipelines should be defined as functions that return a ProcessingPipeline object.
     return ProcessingPipeline(
-        name="Azure windows pipeline",
+        name="Azure Windows Pipeline",
         # Set of identifiers of backends (from the backends mapping) that are allowed to use this processing pipeline. This can be used by frontends like Sigma CLI to warn the user about inappropriate usage.
         priority=20,  # The priority defines the order pipelines are applied. See documentation for common values.
         items=[
                   ProcessingItem(  # log sources mapped from windows_service_source_mapping
                       identifier=f"azure_windows_{service}",
-                      transformation=AddConditionTransformation({"source": "WinEventLog:" + source}),
+                      transformation=AddConditionTransformation(source),
                       rule_conditions=[logsource_windows(service)],
                   )
-                  for service, source in windows_logsource_mapping.items()
+                  for service, source in azure_windows_service_map.items()
               ] + [
                   ProcessingItem(  # Field mappings
                       identifier="azure_field_mapping",
                       transformation=FieldMappingTransformation({
-                          "EventID": "event_id",  # TODO: define your own field mappings
+                          # "EventID": "event_id",
                       })
                   )
               ],

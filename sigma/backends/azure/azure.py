@@ -1,15 +1,11 @@
-from sigma.conversion.deferred import DeferredTextQueryExpression, DeferredQueryExpression
-from sigma.conversion.state import ConversionState
-from sigma.exceptions import SigmaFeatureNotSupportedByBackendError
-from sigma.rule import SigmaRule, SigmaDetectionItem
-from sigma.conversion.base import TextQueryBackend
-from sigma.conditions import ConditionItem, ConditionAND, ConditionOR, ConditionNOT, ConditionType, \
-    ConditionValueExpression, ConditionIdentifier, ConditionFieldEqualsValueExpression
-from sigma.types import SigmaCompareExpression, SigmaString
-from sigma.pipelines.azure import azure_windows, azure_backend_pipeline
-import sigma
 import re
-from typing import ClassVar, Dict, Tuple, Pattern, List, Any, Optional, Callable, Union
+from typing import ClassVar, Dict, Tuple, Pattern, Any
+
+from sigma.conditions import ConditionItem, ConditionAND, ConditionOR, ConditionNOT, ConditionType
+from sigma.conversion.base import TextQueryBackend
+from sigma.conversion.deferred import DeferredTextQueryExpression
+from sigma.conversion.state import ConversionState
+from sigma.types import SigmaCompareExpression
 
 
 class AzureDeferredWhereExpression(DeferredTextQueryExpression):
@@ -19,6 +15,7 @@ class AzureDeferredWhereExpression(DeferredTextQueryExpression):
         False: "",
     }
     default_field = 'test_field_should_never_appear'
+
 
 class AzureDeferredSearchExpression(DeferredTextQueryExpression):
     template = 'search {op}({value})'
@@ -41,7 +38,7 @@ class AzureBackend(TextQueryBackend):
         "default": "Plain Azure queries",
     }
     requires_pipeline: bool = False
-    backend_processing_pipeline = azure_backend_pipeline()
+    backend_processing_pipeline = False
 
     precedence: ClassVar[Tuple[ConditionItem, ConditionItem, ConditionItem]] = (ConditionNOT, ConditionAND, ConditionOR)
     group_expression: ClassVar[str] = "({expr})"  # Expression for precedence override grouping as format string with
@@ -110,7 +107,8 @@ class AzureBackend(TextQueryBackend):
     # placeholders {field} = in({list})
 
     # Numeric comparison operators
-    compare_op_expression: ClassVar[str] = "{field}" + token_separator + "{operator}" + token_separator + "{value}"  # Compare operation query as format string
+    compare_op_expression: ClassVar[
+        str] = "{field}" + token_separator + "{operator}" + token_separator + "{value}"  # Compare operation query as format string
     # with placeholders {field}, {operator} and {value}
 
     # Mapping between CompareOperators elements and strings used as replacement for {operator} in compare_op_expression
@@ -150,6 +148,7 @@ class AzureBackend(TextQueryBackend):
     deferred_start: ClassVar[str] = "\n| "  # String used as separator between main query and deferred parts
     deferred_separator: ClassVar[str] = "\n| "  # String used to join multiple deferred query parts
     deferred_only_query: ClassVar[str] = "union *"  # String used as query if final query only contains
+
     # a deferred expression
 
     def convert_condition(self, cond: ConditionType, state: ConversionState) -> Any:
@@ -157,7 +156,7 @@ class AzureBackend(TextQueryBackend):
             return AzureDeferredWhereExpression(state, field=None, value=super().convert_condition(cond, state))
         return super().convert_condition(cond, state)
 
-    def escape_and_quote_field(self, field_name : str) -> str:
+    def escape_and_quote_field(self, field_name: str) -> str:
         field = super().escape_and_quote_field(field_name)
 
         if field.startswith("'") and field.endswith("'"):
