@@ -1,7 +1,7 @@
 from sigma.conversion.deferred import DeferredTextQueryExpression, DeferredQueryExpression
 from sigma.conversion.state import ConversionState
 from sigma.exceptions import SigmaFeatureNotSupportedByBackendError
-from sigma.rule import SigmaRule
+from sigma.rule import SigmaRule, SigmaDetectionItem
 from sigma.conversion.base import TextQueryBackend
 from sigma.conditions import ConditionItem, ConditionAND, ConditionOR, ConditionNOT, ConditionType, \
     ConditionValueExpression, ConditionIdentifier, ConditionFieldEqualsValueExpression
@@ -12,7 +12,7 @@ import re
 from typing import ClassVar, Dict, Tuple, Pattern, List, Any, Optional, Callable, Union
 
 
-class AzureWhereExpression(DeferredTextQueryExpression):
+class AzureDeferredWhereExpression(DeferredTextQueryExpression):
     template = 'where {op}({value})'
     operators = {
         True: "not",
@@ -38,7 +38,7 @@ class AzureBackend(TextQueryBackend):
     precedence: ClassVar[Tuple[ConditionItem, ConditionItem, ConditionItem]] = (ConditionNOT, ConditionAND, ConditionOR)
     group_expression: ClassVar[str] = "({expr})"  # Expression for precedence override grouping as format string with
     # {expr} placeholder
-    parenthesize: bool = False
+    parenthesize: bool = True
 
     # Generated query tokens
     # separator inserted between all boolean operators
@@ -147,6 +147,6 @@ class AzureBackend(TextQueryBackend):
             self,
             cond: ConditionType,
             state: ConversionState) -> Any:
-        if isinstance(cond.parent, ConditionIdentifier) or cond.parent is None:
-            return AzureWhereExpression(state, field=None, value=super().convert_condition(cond, state))
+        if len(cond.parent_chain_condition_classes()) == 0:
+            return AzureDeferredWhereExpression(state, field=None, value=super().convert_condition(cond, state))
         return super().convert_condition(cond, state)

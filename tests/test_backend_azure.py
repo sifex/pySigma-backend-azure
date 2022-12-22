@@ -103,7 +103,7 @@ def test_azure_in_expression(azure_backend: AzureBackend):
                         - valueC*
                 condition: sel
         """)
-    ) == ['union *\n| where (fieldA =~ "valueA" or fieldA =~ "valueB" or fieldA startswith \'valueC\')']
+    ) == ['union *\n| where (fieldA in ("valueA", "valueB", "valueC*"))']
 
 
 def test_azure_regex_query(azure_backend: AzureBackend):
@@ -152,7 +152,7 @@ def test_azure_field_name_with_whitespace(azure_backend: AzureBackend):
                     field name: value
                 condition: sel
         """)
-    ) == ['union *\n| where field name =~ "value"']
+    ) == ['union *\n| where (\'field name\' =~ "value")']
 
 
 # TODO: implement tests for all backend features that don't belong to the base class defaults, e.g. features that were
