@@ -22,7 +22,7 @@ def test_azure_and_expression(azure_backend: AzureBackend):
                     fieldB: valueB
                 condition: sel
         """)
-    ) == ['union * | where (fieldA == "valueA" and fieldB == "valueB")']
+    ) == ['union *\n| where (fieldA =~ "valueA" and fieldB =~ "valueB")']
 
 
 def test_azure_or_expression(azure_backend: AzureBackend):
@@ -40,7 +40,7 @@ def test_azure_or_expression(azure_backend: AzureBackend):
                     fieldB: valueB
                 condition: 1 of sel*
         """)
-    ) == ['union * | where (fieldA == "valueA" or fieldB == "valueB")']
+    ) == ['union *\n| where (fieldA =~ "valueA" or fieldB =~ "valueB")']
 
 
 def test_azure_and_or_expression(azure_backend: AzureBackend):
@@ -62,7 +62,8 @@ def test_azure_and_or_expression(azure_backend: AzureBackend):
                 condition: sel
         """)
     ) == [
-               'union * | where ((fieldA == "valueA1" or fieldA == "valueA2") and (fieldB == "valueB1" or fieldB == "valueB2"))']
+               'union *\n| where ((fieldA =~ "valueA1" or fieldA =~ "valueA2") and (fieldB =~ "valueB1" or fieldB =~ "valueB2"))'
+    ]
 
 
 def test_azure_or_and_expression(azure_backend: AzureBackend):
@@ -82,7 +83,8 @@ def test_azure_or_and_expression(azure_backend: AzureBackend):
                     fieldB: valueB2
                 condition: 1 of sel*
         """)
-    ) == ['union * | where ((fieldA == "valueA1" and fieldB == "valueB1") or (fieldA == "valueA2" and fieldB == "valueB2"))']
+    ) == [
+               'union *\n| where ((fieldA =~ "valueA1" and fieldB =~ "valueB1") or (fieldA =~ "valueA2" and fieldB =~ "valueB2"))']
 
 
 def test_azure_in_expression(azure_backend: AzureBackend):
@@ -101,7 +103,7 @@ def test_azure_in_expression(azure_backend: AzureBackend):
                         - valueC*
                 condition: sel
         """)
-    ) == ['| where (fieldA == "valueA" or fieldA == "valueB" or fieldA startswith \'valueC\')']
+    ) == ['union *\n| where (fieldA =~ "valueA" or fieldA =~ "valueB" or fieldA startswith \'valueC\')']
 
 
 def test_azure_regex_query(azure_backend: AzureBackend):
@@ -118,7 +120,7 @@ def test_azure_regex_query(azure_backend: AzureBackend):
                     fieldB: foo
                 condition: sel
         """)
-    ) == ['union * | where (fieldA matches regex "(?i)foo..*bar" and fieldB == "foo")']
+    ) == ['union *\n| where (fieldA matches regex "(?i)foo..*bar" and fieldB =~ "foo")']
 
 
 def test_azure_cidr_query(azure_backend: AzureBackend):
@@ -131,10 +133,10 @@ def test_azure_cidr_query(azure_backend: AzureBackend):
                 product: test_product
             detection:
                 sel:
-                    field|cidr: 192.168.0.0/16
+                    fieldname|cidr: 192.168.0.0/16
                 condition: sel
         """)
-    ) == ['<insert expected result here>']
+    ) == ["union *\n| where (ipv4_is_in_range(fieldname, '192.168.0.0/16'))"]
 
 
 def test_azure_field_name_with_whitespace(azure_backend: AzureBackend):
@@ -150,7 +152,7 @@ def test_azure_field_name_with_whitespace(azure_backend: AzureBackend):
                     field name: value
                 condition: sel
         """)
-    ) == ['union * | where field name == "value"']
+    ) == ['union *\n| where field name =~ "value"']
 
 
 # TODO: implement tests for all backend features that don't belong to the base class defaults, e.g. features that were
