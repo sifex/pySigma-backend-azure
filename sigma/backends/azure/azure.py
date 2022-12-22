@@ -12,20 +12,13 @@ import re
 from typing import ClassVar, Dict, Tuple, Pattern, List, Any, Optional, Callable, Union
 
 
-class AzureDeferredRegularExpression(DeferredTextQueryExpression):
-    template = 'where {op}({field} matches regex "{value}")'
-    operators = {
-        True: "not",
-        False: "",
-    }
-
-
-class AzureDeferredCIDRExpression(DeferredTextQueryExpression):
+class AzureWhereExpression(DeferredTextQueryExpression):
     template = 'where {op}({value})'
     operators = {
         True: "not",
         False: "",
     }
+    default_field = 'test_field_should_never_appear'
 
 
 class AzureBackend(TextQueryBackend):
@@ -93,7 +86,7 @@ class AzureBackend(TextQueryBackend):
     # eq_token operator
 
     # Regular expressions
-    re_expression: ClassVar[str] = '{field} matches regex "{regex}"'  # Regular expression query as format string with
+    re_expression: ClassVar[str] = '{field} matches regex "(?i){regex}"'  # Regular expression query as format string with
     # placeholders
     # {field} and {regex}
     re_escape_char: ClassVar[str] = "\\"  # Character used for escaping in regular expressions
@@ -150,22 +143,10 @@ class AzureBackend(TextQueryBackend):
     deferred_only_query: ClassVar[
         str] = "union *"  # String used as query if final query only contains deferred expression
 
-    def convert_condition_field_eq_val_re(self, cond: ConditionFieldEqualsValueExpression,
-                                          state: "sigma.conversion.state.ConversionState") -> AzureDeferredRegularExpression:
-        """Defer regular expression matching to pipelined regex command after main search expression."""
-        if cond.parent_condition_chain_contains(ConditionOR):
-            raise SigmaFeatureNotSupportedByBackendError(
-                "ORing regular expressions is not yet supported by Splunk backend", source=cond.source)
-        return AzureDeferredRegularExpression(state, cond.field,
-                                              super().convert_condition_field_eq_val_re(cond, state)).postprocess(None,
-                                                                                                                  cond)
-
-    def convert_condition_field_eq_val_cidr(self, cond: ConditionFieldEqualsValueExpression,
-                                            state: "sigma.conversion.state.ConversionState") -> AzureDeferredCIDRExpression:
-        """Defer CIDR network range matching to pipelined where cidrmatch command after main search expression."""
-        if cond.parent_condition_chain_contains(ConditionOR):
-            raise SigmaFeatureNotSupportedByBackendError("ORing CIDR matching is not yet supported by Splunk backend",
-                                                         source=cond.source)
-        return AzureDeferredCIDRExpression(state, cond.field,
-                                           super().convert_condition_field_eq_val_cidr(cond, state)).postprocess(None,
-                                                                                                                 cond)
+    def convert_condition(
+            self,
+            cond: ConditionType,
+            state: ConversionState) -> Any:
+        if isinstance(cond.parent, ConditionIdentifier) or cond.parent is None:
+            return AzureWhereExpression(state, field=None, value=super().convert_condition(cond, state))
+        return super().convert_condition(cond, state)
