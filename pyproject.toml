@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "pySigma-backend-azure"
+version = "0.1.0"
+description = "pySigma Azure backend"
+authors = ["Alex Sinnott <alex@sinn.io>"]
+license = "MIT"
+repository = "https://github.com/sifex/pySigma-backend-azure"
+packages = [
+    { include = "sigma" }
+]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+pysigma = "^0.8.10"
+
+[tool.poetry.dev-dependencies]
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.2.0"
+pytest-cov = "^4.0.0"
+coverage = "^7.0.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
