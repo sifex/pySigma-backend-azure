@@ -141,7 +141,7 @@ def test_azure_cidr_query(azure_backend: AzureBackend):
 
 
 def test_azure_cidr_query_or(azure_backend : AzureBackend):
-    query = azure_backend.convert(
+     assert azure_backend.convert(
         SigmaCollection.from_yaml("""
             title: Test
             status: test
@@ -162,6 +162,29 @@ def test_azure_cidr_query_or(azure_backend : AzureBackend):
     ]
 
 
+def test_azure_cidr_query_not(azure_backend : AzureBackend):
+    assert azure_backend.convert(
+        SigmaCollection.from_yaml("""
+            title: Test
+            status: test
+            logsource:
+                category: test_category
+                product: test_product
+            detection:
+                local_net:
+                    fieldA|cidr:
+                        - 192.168.0.0/16
+                        - 10.0.0.0/8
+                sel:
+                    fieldA|cidr:
+                        - 0.0.0.0/0
+                condition: sel and not local_net
+        """)
+    ) == [
+        'union *\n| where (ipv4_is_in_range(fieldA, "0.0.0.0/0") and (not (ipv4_is_in_range(fieldA, "192.168.0.0/16") or ipv4_is_in_range(fieldA, "10.0.0.0/8"))))'
+    ]
+
+
 def test_azure_field_name_with_whitespace(azure_backend: AzureBackend):
     assert azure_backend.convert(
         SigmaCollection.from_yaml("""
@@ -176,3 +199,57 @@ def test_azure_field_name_with_whitespace(azure_backend: AzureBackend):
                 condition: sel
         """)
     ) == ['union *\n| where ([\'field name\'] =~ "value")']
+
+
+def test_azure_keyword_search(azure_backend: AzureBackend):
+    assert azure_backend.convert(
+        SigmaCollection.from_yaml("""
+            title: Test
+            status: test
+            logsource:
+                category: test_category
+                product: test_product
+            detection:
+                sel:
+                    - test_value_one
+                    - test_value_two
+                condition: sel
+        """)
+    ) == ['union *\n| search ("test_value_one" or "test_value_two")']
+
+
+def test_azure_not_keyword_search(azure_backend: AzureBackend):
+    assert azure_backend.convert(
+        SigmaCollection.from_yaml("""
+            title: Test
+            status: test
+            logsource:
+                category: test_category
+                product: test_product
+            detection:
+                sel:
+                    - test_value_one
+                    - test_value_two
+                condition: not sel
+        """)
+    ) == ['union *\n| search (not ("test_value_one" or "test_value_two"))']
+
+
+def test_azure_not_keyword_search_test(azure_backend: AzureBackend):
+    assert azure_backend.convert(
+        SigmaCollection.from_yaml("""
+            title: Test
+            status: test
+            logsource:
+                category: test_category
+                product: test_product
+            detection:
+                sel:
+                    - test_value_one
+                    - test_value_two
+                    - test: 123
+                sel2:
+                    value: condition
+                condition: sel and not sel2
+        """)
+    ) == ['union *\n| search (not ("test_value_one" or "test_value_two"))']

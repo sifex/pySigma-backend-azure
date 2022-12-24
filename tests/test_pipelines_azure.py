@@ -25,3 +25,4 @@ def test_splunk_windows_pipeline_simple(service, source):
                 condition: sel
         """)
     ) == [f"source=\"WinEventLog:{source}\" EventCode=123 field=\"value\""]
+
