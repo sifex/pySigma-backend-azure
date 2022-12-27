@@ -1,7 +1,11 @@
+from dataclasses import dataclass
+
+from sigma.conditions import SigmaCondition
 from sigma.pipelines.common import logsource_windows
 from sigma.processing.pipeline import ProcessingItem, ProcessingPipeline
 from sigma.processing.transformations import FieldMappingTransformation, \
-    ReplaceStringTransformation, AddConditionTransformation
+    ReplaceStringTransformation, AddConditionTransformation, ConditionTransformation
+from sigma.rule import SigmaRule
 
 azure_windows_service_map = {
     'security': 'SecurityEvent',
@@ -13,6 +17,12 @@ azure_windows_service_map = {
 }
 
 
+@dataclass
+class AddAzureLogsource(AddConditionTransformation):
+    def apply_condition(self, cond: SigmaCondition) -> None:
+        cond.condition = f"{self.name} and ({cond.condition})"
+
+
 def azure_windows_pipeline() -> ProcessingPipeline:  # Processing pipelines should be defined as functions that return a ProcessingPipeline object.
     return ProcessingPipeline(
         name="Azure Windows Pipeline",
@@ -21,7 +31,7 @@ def azure_windows_pipeline() -> ProcessingPipeline:  # Processing pipelines shou
         items=[
                   ProcessingItem(  # log sources mapped from windows_service_source_mapping
                       identifier=f"azure_windows_{service}",
-                      transformation=AddConditionTransformation(source),
+                      transformation=AddAzureLogsource({'__azure_logsource': source}),
                       rule_conditions=[logsource_windows(service)],
                   )
                   for service, source in azure_windows_service_map.items()

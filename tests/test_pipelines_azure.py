@@ -24,5 +24,5 @@ def test_splunk_windows_pipeline_simple(service, source):
                     field: value
                 condition: sel
         """)
-    ) == [f"source=\"WinEventLog:{source}\" EventCode=123 field=\"value\""]
+    ) == [f'{source}\n| where (EventID =~ 123 and field =~ "value")']
 

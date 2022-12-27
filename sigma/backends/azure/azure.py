@@ -1,3 +1,4 @@
+import random
 import re
 from typing import ClassVar, Dict, Tuple, Pattern, Any, Union
 
@@ -11,7 +12,7 @@ from sigma.types import SigmaCompareExpression, SigmaString, SigmaNumber, SigmaB
 
 
 class AzureDeferredWhereExpression(DeferredTextQueryExpression):
-    template = 'where {op}({value})'
+    template = 'where {op}{value}'
     operators = {
         True: "not",
         False: "",
@@ -19,8 +20,8 @@ class AzureDeferredWhereExpression(DeferredTextQueryExpression):
     default_field = None
 
 
-class AzureDeferredSearchExpression(DeferredTextQueryExpression):
-    template = 'search {op}({value})'
+class AzureLogsourceDeferredExpression(DeferredTextQueryExpression):
+    template = '{value}'
     operators = {
         True: "not",
         False: "",
@@ -73,7 +74,7 @@ class AzureBackend(TextQueryBackend):
     escape_char: ClassVar[str] = "\\"  # Escaping character for special characrers inside string
     wildcard_multi: ClassVar[str] = "*"  # Character used as multi-character wildcard
     wildcard_single: ClassVar[str] = "*"  # Character used as single-character wildcard
-    add_escaped: ClassVar[str] = "\\"  # Characters quoted in addition to wildcards and string quote
+    add_escaped: ClassVar[str] = ""  # Characters quoted in addition to wildcards and string quote
     filter_chars: ClassVar[str] = ""  # Characters filtered
     bool_values: ClassVar[Dict[bool, str]] = {  # Values to which boolean values are mapped.
         True: "true",
@@ -122,8 +123,8 @@ class AzureBackend(TextQueryBackend):
     list_separator: ClassVar[str] = ", "  # List element separator
 
     # Value not bound to a field
-    unbound_value_str_expression: ClassVar[str] = '{field} contains {value}'  # Expression for string value not bound to a field as format string with placeholder {value}
-    unbound_value_num_expression: ClassVar[str] = '"{value}"'  # Expression for number value not bound to a field as format string with placeholder {value}
+    unbound_value_str_expression: ClassVar[str] = '["*"] contains {value}'  # Expression for string value not bound to a field as format string with placeholder {value}
+    unbound_value_num_expression: ClassVar[str] = '["*"] contains "{value}"'  # Expression for number value not bound to a field as format string with placeholder {value}
     unbound_value_re_expression: ClassVar[str] = '_=~{value}'  # Expression for regular expression not bound to a field as format string with placeholder {value}
 
     # Query finalization: appending and concatenating deferred query part
@@ -132,17 +133,36 @@ class AzureBackend(TextQueryBackend):
     deferred_only_query: ClassVar[str] = "union *"  # String used as query if final query only contains
 
     def convert_condition(self, cond: ConditionType, state: ConversionState) -> Any:
+        """
+        Start with a deferred where expression
+        """
+        if getattr(cond, 'field', '') == '__azure_logsource':
+            return AzureLogsourceDeferredExpression(state, field=None, value=str(cond.value))
+
         if len(cond.parent_chain_condition_classes()) == 0:
-            return AzureDeferredWhereExpression(state, None, value=super().convert_condition(cond, state))
+            return AzureDeferredWhereExpression(state, field=None, value=super().convert_condition(cond, state))
 
         return super().convert_condition(cond, state)
 
     def escape_and_quote_field(self, field_name: str) -> str:
+        """
+        Wrap raw field names with brackets if they have spaces.
+        """
         field = super().escape_and_quote_field(field_name)
 
-        if field.startswith("'") and field.endswith("'"):
+        if field.startswith(self.field_quote) and field.endswith(self.field_quote):
             field = "[" + field + "]"
 
         return field
 
+    def finalize_query(self, rule: SigmaRule, query: Union[str, DeferredQueryExpression], index: int, state: ConversionState, output_format: str) -> Union[str, DeferredQueryExpression]:
+        """
+        Converting our "AzureLogsourceDeferredExpression" into an Azure Table Prefix
+        """
 
+        logsource_expressions = [deferred for deferred in state.deferred if isinstance(deferred, AzureLogsourceDeferredExpression)]
+        if len(logsource_expressions):
+            query = logsource_expressions[0].value  # TODO Might be more than one table
+            state.deferred = list(filter(lambda d: not isinstance(d, AzureLogsourceDeferredExpression), state.deferred))
+
+        return super().finalize_query(rule, query, index, state, output_format)
