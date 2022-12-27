@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from sigma.conditions import SigmaCondition
-from sigma.pipelines.common import logsource_windows
+from sigma.pipelines.common import logsource_windows, logsource_windows_process_creation
 from sigma.processing.pipeline import ProcessingItem, ProcessingPipeline
 from sigma.processing.transformations import FieldMappingTransformation, \
     ReplaceStringTransformation, AddConditionTransformation, ConditionTransformation
@@ -41,6 +41,18 @@ def azure_windows_pipeline() -> ProcessingPipeline:  # Processing pipelines shou
                       transformation=FieldMappingTransformation({
                           # "EventID": "event_id",
                       })
+                  ),
+                  ProcessingItem(
+                      identifier="azure_process_creation_logsource",
+                      transformation=AddAzureLogsource({'__azure_logsource': 'SecurityEvent'}),
+                      rule_conditions=[logsource_windows_process_creation()]
+                  ),
+                  ProcessingItem(
+                      identifier="azure_process_creation_logsouce_event_id",
+                      transformation=AddConditionTransformation({
+                          'EventID': '4688'
+                      }),
+                      rule_conditions=[logsource_windows_process_creation()]
                   )
               ],
     )
