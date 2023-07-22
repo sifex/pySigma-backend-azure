@@ -1,5 +1,5 @@
 ![Tests](https://github.com/sifex/pySigma-backend-azure/actions/workflows/test.yml/badge.svg)
-![Coverage Badge](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/sifex/GitHub Gist identifier containing coverage badge JSON expected by shields.io./raw/sifex-pySigma-backend-azure.json)
+![Coverage Badge](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/sifex/ca69606b24ff09035e696a1d4399ba24/raw/sifex-pySigma-backend-azure.json)
 ![Status](https://img.shields.io/badge/Status-pre--release-orange)
 
 # pySigma Azure Backend
