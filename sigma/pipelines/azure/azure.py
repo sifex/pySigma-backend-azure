@@ -1,11 +1,10 @@
 from dataclasses import dataclass
 
 from sigma.conditions import SigmaCondition
-from sigma.pipelines.common import logsource_windows, logsource_windows_process_creation
-from sigma.processing.pipeline import ProcessingItem, ProcessingPipeline
-from sigma.processing.transformations import FieldMappingTransformation, \
-    ReplaceStringTransformation, AddConditionTransformation, ConditionTransformation
-from sigma.rule import SigmaRule
+from sigma.pipelines.common import logsource_windows_process_creation, logsource_windows
+
+from sigma.processing.pipeline import ProcessingPipeline, ProcessingItem
+from sigma.processing.transformations import AddConditionTransformation, FieldMappingTransformation
 
 azure_windows_service_map = {
     'security': 'SecurityEvent',
@@ -23,10 +22,13 @@ class AddAzureLogsource(AddConditionTransformation):
         cond.condition = f"{self.name} and ({cond.condition})"
 
 
+# TODO: the following code is just an example extend/adapt as required.
+# See https://sigmahq-pysigma.readthedocs.io/en/latest/Processing_Pipelines.html for further documentation.
+
 def azure_windows_pipeline() -> ProcessingPipeline:  # Processing pipelines should be defined as functions that return a ProcessingPipeline object.
     return ProcessingPipeline(
         name="Azure Windows Pipeline",
-        # Set of identifiers of backends (from the backends mapping) that are allowed to use this processing pipeline. This can be used by frontends like Sigma CLI to warn the user about inappropriate usage.
+        allowed_backends=frozenset(),  # Set of identifiers of backends (from the backends mapping) that are allowed to use this processing pipeline. This can be used by frontends like Sigma CLI to warn the user about inappropriate usage.
         priority=20,  # The priority defines the order pipelines are applied. See documentation for common values.
         items=[
                   ProcessingItem(  # log sources mapped from windows_service_source_mapping

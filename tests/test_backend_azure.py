@@ -138,6 +138,23 @@ def test_azure_regex_query(azure_backend: AzureBackend):
                     fieldB: foo
                 condition: sel
         """)
+    ) == ['union *\n| where fieldA matches regex "foo.*bar" and fieldB =~ "foo"']
+
+
+def test_azure_regex_case_insensitive_query(azure_backend: AzureBackend):
+    assert azure_backend.convert(
+        SigmaCollection.from_yaml("""
+            title: Test
+            status: test
+            logsource:
+                category: test_category
+                product: test_product
+            detection:
+                sel:
+                    fieldA|re|i: foo.*bar
+                    fieldB: foo
+                condition: sel
+        """)
     ) == ['union *\n| where fieldA matches regex "(?i)foo.*bar" and fieldB =~ "foo"']
 
 
