@@ -1,6 +1,5 @@
-![Tests](https://github.com/sifex/pySigma-backend-azure/actions/workflows/test.yml/badge.svg)
-![Coverage Badge](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/sifex/ca69606b24ff09035e696a1d4399ba24/raw/sifex-pySigma-backend-azure.json)
-![Status](https://img.shields.io/badge/Status-pre--release-orange)
+> [!CAUTION]
+> This backend is no longer maintained. For Defender-coompatible KQL, you should use [AttackIQ's Microsoft 365 Defender backend](https://github.com/AttackIQ/pySigma-backend-microsoft365defender) instead.
 
 # pySigma Azure Backend
 
